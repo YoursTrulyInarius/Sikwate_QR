@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3E2723;
+  --color-secondary: #FFF8E1;
+  --color-accent: #FFA000;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  background-color: #1a1a1a;
+  /* Dark background outside the mobile frame */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  max-width: 400px;
+  /* Force mobile width */
+  max-height: 850px;
+  background-color: var(--color-secondary);
+  color: var(--color-primary);
+  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.6);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 12px solid #1a1a1a;
+  /* Thicker bezel */
+  border-radius: 50px;
+  background-clip: padding-box;
+  transition: all 0.5s ease;
+}
+
+/* Allow full-screen mode for printing or desktop views */
+#root:has(.full-screen),
+#root.full-screen {
+  max-width: none !important;
+  max-height: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#root:has(.full-screen)::before,
+#root:has(.full-screen)::after,
+#root.full-screen::before,
+#root.full-screen::after {
+  display: none !important;
+}
+
+/* Speaker notch simulation */
+#root::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 25px;
+  background: #1a1a1a;
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
+  z-index: 100;
+}
+
+/* Home bar simulation */
+#root::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 4px;
+  background: #1a1a1a;
+  border-radius: 10px;
+  opacity: 0.2;
+  z-index: 100;
+}
+
+/* Custom UI Components with @apply */
+
+.btn-primary {
+  @apply bg-primary text-secondary px-6 py-3 rounded-xl font-bold transition-all active:scale-95 hover:brightness-110 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 text-sm;
+}
+
+.btn-secondary {
+  @apply bg-accent text-primary px-4 py-3 rounded-xl font-black uppercase tracking-tight transition-all active:scale-95 hover:brightness-105 shadow-md shadow-accent/20 flex items-center justify-center gap-2 text-[10px];
+}
+
+.card {
+  @apply bg-white border border-primary/5 rounded-2xl p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/10;
+}
+
+/* Scrollbar styling for native feel */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(62, 39, 35, 0.1);
+  border-radius: 10px;
+}
+
+/* Print functionality */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body,
+  :root {
+    background-color: white !important;
+  }
+
+  #root {
+    max-width: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    background-color: white !important;
+  }
+}
+
+/* Typography refinements */
+h1,
+h2,
+h3 {
+  @apply font-sans;
+}

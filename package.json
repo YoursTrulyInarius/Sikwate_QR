@@ -1,0 +1,16 @@
+{
+    "name": "sikwate-qr-root",
+    "version": "1.0.0",
+    "description": "Sikwate House QR-Based Ordering System",
+    "main": "main.js",
+    "scripts": {
+        "api-server": "C:\\xampp\\php\\php.exe -S 127.0.0.1:8000 -t api",
+        "dev": "npm run dev --prefix frontend",
+        "electron-app": "electron .",
+        "start": "concurrently -n \"api,vite,app\" -c \"bgBlue.bold,bgMagenta.bold,bgGreen.bold\" \"npm run api-server\" \"npm run dev\" \"npm run electron-app\""
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2",
+        "electron": "^31.0.0"
+    }
+}
