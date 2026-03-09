@@ -6,8 +6,9 @@
 This software is currently a **Web-Based Prototype** built for testing and demonstration purposes. It simulates the core functionality (ordering, kitchen management, billing, and cashier checkout) of the restaurant system. 
 
 **The actual production Mobile App will be published later.** This prototype ensures all databases, APIs, and business logic are fully verified before native mobile development begins.
-**QR CODE IMAGES ARE STORED INSIDE THE FOLDER, THIS USES "IMPORT FROM" SINCE THE APP IS STILL UNDER PROTOYPE. ONCE FULLY BUILT, IT WILL USE THE ACTUAL CAMERA INSTEAD OF "IMPORT"
 ---
+---
+**QR CODE IMAGES ARE STORED INSIDE THE FOLDER, THIS USES "IMPORT FROM" SINCE THE APP IS STILL UNDER PROTOYPE. ONCE FULLY BUILT, IT WILL USE THE ACTUAL CAMERA INSTEAD OF "IMPORT".
 
 ## 📖 System Overview
 
