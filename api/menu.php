@@ -4,7 +4,12 @@ require_once 'db_connect.php';
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
-    $stmt = $conn->prepare("SELECT * FROM MENU ORDER BY Category, ItemName");
+    $trash = $_GET['trash'] ?? 'false';
+    if ($trash === 'true') {
+        $stmt = $conn->prepare("SELECT * FROM MENU WHERE DeletedAt IS NOT NULL ORDER BY Category, ItemName");
+    } else {
+        $stmt = $conn->prepare("SELECT * FROM MENU WHERE DeletedAt IS NULL ORDER BY Category, ItemName");
+    }
     $stmt->execute();
     echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
 } elseif ($method === 'POST') {
@@ -65,6 +70,16 @@ if ($method === 'GET') {
         $stmt = $conn->prepare($sql);
         $stmt->execute($params);
         echo json_encode(["message" => "Item updated successfully"]);
+    } elseif (isset($_POST['restore'])) {
+        // RESTORE
+        $id = $_POST['id'] ?? null;
+        if (!$id) {
+            echo json_encode(["error" => "No ID provided"]);
+            exit;
+        }
+        $stmt = $conn->prepare("UPDATE MENU SET DeletedAt = NULL WHERE ItemID = ?");
+        $stmt->execute([$id]);
+        echo json_encode(["message" => "Item restored successfully"]);
     } else {
         // CREATE
         if (empty($itemName) || empty($price) || empty($category)) {
@@ -78,21 +93,29 @@ if ($method === 'GET') {
 
 } elseif ($method === 'DELETE') {
     $id = $_GET['id'] ?? null;
+    $permanent = $_GET['permanent'] ?? 'false';
     if (!$id) {
         echo json_encode(["error" => "No ID provided"]);
         exit;
     }
 
-    // Remove file if exists
-    $stmt = $conn->prepare("SELECT ItemImage FROM MENU WHERE ItemID = ?");
-    $stmt->execute([$id]);
-    $item = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($item && $item['ItemImage'] && file_exists($item['ItemImage'])) {
-        unlink($item['ItemImage']);
-    }
+    if ($permanent === 'true') {
+        // Permanent delete: Remove file if exists
+        $stmt = $conn->prepare("SELECT ItemImage FROM MENU WHERE ItemID = ?");
+        $stmt->execute([$id]);
+        $item = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($item && $item['ItemImage'] && file_exists($item['ItemImage'])) {
+            unlink($item['ItemImage']);
+        }
 
-    $stmt = $conn->prepare("DELETE FROM MENU WHERE ItemID = ?");
-    $stmt->execute([$id]);
-    echo json_encode(["message" => "Item deleted"]);
+        $stmt = $conn->prepare("DELETE FROM MENU WHERE ItemID = ?");
+        $stmt->execute([$id]);
+        echo json_encode(["message" => "Item permanently deleted"]);
+    } else {
+        // Soft delete: Just set DeletedAt
+        $stmt = $conn->prepare("UPDATE MENU SET DeletedAt = CURRENT_TIMESTAMP WHERE ItemID = ?");
+        $stmt->execute([$id]);
+        echo json_encode(["message" => "Item moved to trash"]);
+    }
 }
 ?>

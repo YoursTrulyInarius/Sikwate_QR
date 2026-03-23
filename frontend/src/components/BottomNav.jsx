@@ -10,7 +10,8 @@ import {
     HandCoins,
     Plus as LucidePlus,
     Menu as MenuIcon,
-    Search
+    Search,
+    Trash2
 } from 'lucide-react'
 import { logoutUser } from '../api/config'
 
@@ -23,6 +24,7 @@ const BottomNav = ({ role, activeTab, onTabChange }) => {
             { id: 'orders', label: 'Orders', icon: <UtensilsCrossed size={20} /> },
             { id: 'menu', label: 'Menu', icon: <LayoutGrid size={20} /> },
             { id: 'add', label: 'Add', icon: <LucidePlus size={20} /> },
+            { id: 'trash', label: 'Trash', icon: <Trash2 size={20} /> },
         ],
         Service: [
             { id: 'deliveries', label: 'Deliver', icon: <ClipboardList size={20} /> },

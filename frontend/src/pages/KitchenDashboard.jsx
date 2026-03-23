@@ -16,7 +16,9 @@ import {
     X,
     Save,
     Filter,
-    Search
+    Search,
+    RefreshCcw,
+    Undo2
 } from 'lucide-react'
 import { API_BASE, getStoredUser } from '../api/config'
 import BottomNav from '../components/BottomNav'
@@ -27,6 +29,7 @@ const KitchenDashboard = () => {
     const [activeTab, setActiveTab] = useState('orders')
     const [orders, setOrders] = useState([])
     const [menu, setMenu] = useState([])
+    const [trashMenu, setTrashMenu] = useState([])
     const [newItem, setNewItem] = useState({ itemName: '', price: '', category: 'Drinks' })
     const [editingItem, setEditingItem] = useState(null)
     const [selectedFile, setSelectedFile] = useState(null)
@@ -71,6 +74,8 @@ const KitchenDashboard = () => {
             setOrders(resO.data || [])
             const resM = await axios.get(`${API_BASE}/menu.php`)
             setMenu(resM.data || [])
+            const resT = await axios.get(`${API_BASE}/menu.php?trash=true`)
+            setTrashMenu(resT.data || [])
         } catch (err) { console.error(err) }
     }
 
@@ -142,7 +147,42 @@ const KitchenDashboard = () => {
         if (result.isConfirmed) {
             try {
                 await axios.delete(`${API_BASE}/menu.php?id=${itemId}`)
-                Toast.fire({ icon: 'success', title: 'Deleted' })
+                Toast.fire({ icon: 'success', title: 'Moved to Trash' })
+                fetchData()
+            } catch (err) {
+                MySwal.fire({ ...swalConfig, icon: 'error', title: 'Failed', text: 'Could not delete' })
+            }
+        }
+    }
+
+    const handleRestoreItem = async (itemId) => {
+        const formData = new FormData()
+        formData.append('id', itemId)
+        formData.append('restore', 'true')
+
+        try {
+            await axios.post(`${API_BASE}/menu.php`, formData)
+            Toast.fire({ icon: 'success', title: 'Restored!' })
+            fetchData()
+        } catch (err) {
+            MySwal.fire({ ...swalConfig, icon: 'error', title: 'Failed', text: 'Could not restore' })
+        }
+    }
+
+    const handlePermanentDelete = async (itemId) => {
+        const result = await MySwal.fire({
+            ...swalConfig,
+            title: 'Delete Forever?',
+            text: "This cannot be undone.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Delete'
+        })
+
+        if (result.isConfirmed) {
+            try {
+                await axios.delete(`${API_BASE}/menu.php?id=${itemId}&permanent=true`)
+                Toast.fire({ icon: 'success', title: 'Permanent Deleted' })
                 fetchData()
             } catch (err) {
                 MySwal.fire({ ...swalConfig, icon: 'error', title: 'Failed', text: 'Could not delete' })
@@ -355,6 +395,56 @@ const KitchenDashboard = () => {
                                 </div>
                             </form>
                         </div>
+                    </div>
+                )}
+
+                {activeTab === 'trash' && (
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-end mb-2 px-1">
+                            <h2 className="text-[10px] font-black uppercase tracking-widest opacity-30">Deleted Items</h2>
+                            <span className="text-[10px] bg-red-400 text-secondary px-2 py-0.5 rounded-full font-bold">{trashMenu.length}</span>
+                        </div>
+
+                        {trashMenu.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20 opacity-20">
+                                <Trash2 size={48} />
+                                <p className="font-bold text-xs mt-4 uppercase tracking-widest">Trash Empty</p>
+                            </div>
+                        ) : (
+                            trashMenu.map(mItem => (
+                                <div key={mItem.ItemID} className="flex items-center justify-between p-3 bg-white rounded-[30px] border border-primary/5 active:scale-[0.98] transition-all">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl bg-secondary overflow-hidden border border-primary/5 shadow-inner grayscale opacity-50">
+                                            {mItem.ItemImage ? (
+                                                <img src={`${API_BASE}/../${mItem.ItemImage}`} alt={mItem.ItemName} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center opacity-10"><Camera size={14} /></div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] font-black text-primary leading-tight uppercase tracking-tighter opacity-50">{mItem.ItemName}</p>
+                                            <p className="text-[9px] font-bold text-accent">₱{mItem.Price} <span className="opacity-20 ml-1"># {mItem.Category}</span></p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        <button
+                                            onClick={() => handleRestoreItem(mItem.ItemID)}
+                                            className="text-primary/30 p-2 hover:text-accent rounded-xl"
+                                            title="Restore"
+                                        >
+                                            <Undo2 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => handlePermanentDelete(mItem.ItemID)}
+                                            className="text-red-300 p-2 hover:text-red-500 rounded-xl"
+                                            title="Delete Permanently"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 )}
             </main>

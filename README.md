@@ -15,7 +15,7 @@ The **Sikwate House QR System** is a 4-role restaurant management platform desig
 
 ### Roles & Dashboards
 1. **Customer**: Scans QR code, browses the menu, adds items to cart with inline quantity selectors, and tracks or cancels their pending orders.
-2. **Kitchen Staff**: Receives order tickets in real-time, marks them as 'Ready for Delivery', and manages the entire restaurant menu (including uploading local photos).
+2. **Kitchen Staff**: Receives order tickets in real-time, marks them as 'Ready for Delivery', and manages the entire restaurant menu (including uploading local photos and a Trash system for soft deletions).
 3. **Service Staff**: Sees orders marked ready by the kitchen and delivers them to the specific table, logging a delivery history.
 4. **Cashier**: Generates detailed receipts for generated orders, verifies itemized bills, and processes final payments to clear tables.
 
@@ -82,6 +82,7 @@ erDiagram
         DECIMAL Price "(10,2)"
         VARCHAR Category
         VARCHAR ItemImage "Path to api/uploads/"
+        TIMESTAMP DeletedAt "Soft delete timestamp"
     }
 
     ORDERS {
