@@ -10,6 +10,19 @@ This software is currently a **Web-Based Prototype** built for testing and demon
 ---
 **QR CODE IMAGES ARE STORED INSIDE THE FOLDER, THIS USES "IMPORT FROM" SINCE THE APP IS STILL A PROTOYPE. ONCE FULLY BUILT, IT WILL USE THE ACTUAL CAMERA INSTEAD OF "IMPORT".**
 
+## 🚀 Recent Updates
+
+We've recently enhanced the prototype with several key features to improve operations and user experience:
+
+- **📦 Menu Stock Management**: The kitchen can now track and update real-time inventory levels for every food item. Stock automatically decrements upon customer orders, with built-in protections to prevent overselling.
+- **✨ Enhanced Food Details**: Customers can now click on any menu item to open a premium detail modal, featuring high-resolution images, full ingredients/descriptions, and current stock availability.
+- **🗑️ Soft-Delete & Trash System**: Deleted menu items are now moved to a "Trash" repository instead of being permanently removed, allowing for quick restoration of accidentally deleted records.
+- **🔔 Centered UI Notifications**: All critical staff actions (Add, Update, Restore, Delete, Serve) now use prominent centered popups (SweetAlert2) for maximum visibility on mobile devices.
+- **🔐 "Login" Branding**: Standardized authentication terminology from "Authorize" to "Login" across all staff and launcher portals for better clarity.
+- **⚡ Performance: API Cache-Busting**: Implemented automatic cache-busting on all dashboard data fetches to ensure staff and customers always see the most accurate, real-time information.
+
+---
+
 ## 📖 System Overview
 
 The **Sikwate House QR System** is a 4-role restaurant management platform designed with a strict mobile-first aesthetic. It handles the complete lifecycle of a customer's visit, from scanning a QR code to process checkout.
