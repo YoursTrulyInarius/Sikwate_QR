@@ -29,6 +29,7 @@ const CustomerDashboard = () => {
     const [activeTab, setActiveTab] = useState('menu')
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('All')
+    const [viewingFood, setViewingFood] = useState(null)
     const navigate = useNavigate()
 
     const swalConfig = {
@@ -61,7 +62,8 @@ const CustomerDashboard = () => {
 
     const fetchMenu = async () => {
         try {
-            const res = await axios.get(`${API_BASE}/menu.php`)
+            const timestamp = new Date().getTime()
+            const res = await axios.get(`${API_BASE}/menu.php?t=${timestamp}`)
             setMenu(res.data || [])
             setLoading(false)
         } catch (err) { console.error(err) }
@@ -69,7 +71,8 @@ const CustomerDashboard = () => {
 
     const fetchActiveOrders = async () => {
         try {
-            const res = await axios.get(`${API_BASE}/orders.php?tableNumber=${tableNumber}`)
+            const timestamp = new Date().getTime()
+            const res = await axios.get(`${API_BASE}/orders.php?tableNumber=${tableNumber}&t=${timestamp}`)
             const data = Array.isArray(res.data) ? res.data : []
             // Only show active or newly cancelled orders
             setActiveOrders(data.filter(o => o.OrderStatus !== 'Paid'))
@@ -111,11 +114,19 @@ const CustomerDashboard = () => {
                 return prev.filter(p => p.ItemID !== product.ItemID)
             } else if (existing) {
                 // Update quantity
+                if (newQuantity > product.Stock) {
+                    Toast.fire({ icon: 'warning', title: 'Limit reached', text: 'Insufficient stock' })
+                    return prev
+                }
                 return prev.map(p => p.ItemID === product.ItemID ? { ...p, quantity: newQuantity } : p)
             } else {
                 // Add new item
+                if (product.Stock <= 0) {
+                    Toast.fire({ icon: 'error', title: 'Out of stock' })
+                    return prev
+                }
                 Toast.fire({ icon: 'success', title: 'Added to cart' })
-                return [...prev, { ...product, quantity: newQuantity }]
+                return [...prev, { ...product, quantity: 1 }]
             }
         })
     }
@@ -141,7 +152,7 @@ const CustomerDashboard = () => {
                 }
                 await axios.post(`${API_BASE}/orders.php`, orderPayload)
                 setCart([])
-                fetchActiveOrders()
+                await fetchActiveOrders()
                 setActiveTab('status')
                 MySwal.fire({
                     ...swalConfig,
@@ -168,7 +179,7 @@ const CustomerDashboard = () => {
         if (result.isConfirmed) {
             try {
                 await axios.patch(`${API_BASE}/orders.php`, { orderId, status: 'Cancelled' })
-                fetchActiveOrders()
+                await fetchActiveOrders()
                 Toast.fire({ icon: 'success', title: 'Order Cancelled' })
             } catch (err) {
                 Toast.fire({ icon: 'error', title: 'Failed to cancel' })
@@ -314,9 +325,12 @@ const CustomerDashboard = () => {
                                         <div className="grid grid-cols-1 gap-4">
                                             {categoryItems.map(menuItem => {
                                                 const quantity = getCartQuantity(menuItem.ItemID)
-                                                return (
+                                                 return (
                                                     <div key={menuItem.ItemID} className={`card !p-3 flex gap-4 transition-all duration-200 ${quantity > 0 ? 'ring-2 ring-accent shadow-lg shadow-accent/10 border-transparent bg-white' : 'bg-white'}`}>
-                                                        <div className="w-20 h-20 rounded-[1.2rem] bg-secondary overflow-hidden shrink-0 border border-primary/5 shadow-inner">
+                                                        <div 
+                                                            onClick={() => setViewingFood(menuItem)}
+                                                            className="w-20 h-20 rounded-[1.2rem] bg-secondary overflow-hidden shrink-0 border border-primary/5 shadow-inner cursor-pointer"
+                                                        >
                                                             {menuItem.ItemImage ? (
                                                                 <img src={`${API_BASE}/../${menuItem.ItemImage}`} alt={menuItem.ItemName} className="w-full h-full object-cover" />
                                                             ) : (
@@ -324,13 +338,19 @@ const CustomerDashboard = () => {
                                                             )}
                                                         </div>
                                                         <div className="flex-1 flex flex-col justify-between py-1">
-                                                            <div>
+                                                            <div onClick={() => setViewingFood(menuItem)} className="cursor-pointer">
                                                                 <h3 className="font-black text-[11px] text-primary uppercase tracking-tighter leading-tight mb-1 pr-2">{menuItem.ItemName}</h3>
-                                                                <div className="flex items-center gap-1">
-                                                                    <span className="text-[9px] font-black text-accent opacity-60">₱</span>
-                                                                    <span className="text-base font-black text-accent tracking-tighter">{menuItem.Price}</span>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="flex items-center gap-1">
+                                                                        <span className="text-[9px] font-black text-accent opacity-60">₱</span>
+                                                                        <span className="text-base font-black text-accent tracking-tighter">{menuItem.Price}</span>
+                                                                    </div>
+                                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${menuItem.Stock <= 0 ? 'bg-red-100 text-red-500' : 'bg-primary/5 text-primary/40'}`}>
+                                                                        {menuItem.Stock <= 0 ? 'Out of Stock' : `${menuItem.Stock} available`}
+                                                                    </span>
                                                                 </div>
                                                             </div>
+
 
                                                             {/* Quantity Controller */}
                                                             {quantity > 0 ? (
@@ -352,9 +372,10 @@ const CustomerDashboard = () => {
                                                             ) : (
                                                                 <button
                                                                     onClick={() => updateQuantity(menuItem, 1)}
-                                                                    className="px-5 py-2 rounded-xl bg-primary flex items-center justify-center text-accent shadow-xl shadow-primary/20 active:bg-accent active:text-primary self-end transition-all"
+                                                                    disabled={menuItem.Stock <= 0}
+                                                                    className={`px-5 py-2 rounded-xl flex items-center justify-center shadow-xl transition-all self-end ${menuItem.Stock <= 0 ? 'bg-secondary/50 text-primary/10 cursor-not-allowed shadow-none' : 'bg-primary text-accent shadow-primary/20 active:bg-accent active:text-primary'}`}
                                                                 >
-                                                                    <span className="text-[9px] font-black uppercase tracking-widest">Add</span>
+                                                                    <span className="text-[9px] font-black uppercase tracking-widest">{menuItem.Stock <= 0 ? 'Sold Out' : 'Add'}</span>
                                                                 </button>
                                                             )}
                                                         </div>
@@ -385,6 +406,86 @@ const CustomerDashboard = () => {
                         <button onClick={placeOrder} className="bg-accent text-primary px-8 py-4 rounded-[18px] text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-accent/20 active:scale-95 transition-transform">
                             Send Order
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Food Details Modal */}
+            {viewingFood && (
+                <div className="fixed inset-0 z-[100] flex items-end justify-center animate-in fade-in duration-300">
+                    <div className="absolute inset-0 bg-primary/40 backdrop-blur-sm" onClick={() => setViewingFood(null)}></div>
+                    <div className="relative w-full max-w-md bg-secondary rounded-t-[40px] shadow-2xl p-8 animate-in slide-in-from-bottom duration-500">
+                        <button 
+                            onClick={() => setViewingFood(null)}
+                            className="absolute top-6 right-6 p-2 bg-white rounded-full text-primary/20 hover:text-accent shadow-sm"
+                        >
+                            <XCircle size={24} />
+                        </button>
+                        
+                        <div className="w-full aspect-square rounded-[30px] bg-white overflow-hidden border border-primary/5 shadow-inner mb-6">
+                            {viewingFood.ItemImage ? (
+                                <img src={`${API_BASE}/../${viewingFood.ItemImage}`} alt={viewingFood.ItemName} className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-primary/5 scale-150"><LucideImage size={48} /></div>
+                            )}
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h2 className="text-2xl font-black text-primary uppercase tracking-tighter leading-tight">{viewingFood.ItemName}</h2>
+                                    <span className="text-[10px] bg-primary/5 px-2 py-1 rounded-md font-black text-primary/30 uppercase tracking-[0.2em]">{viewingFood.Category}</span>
+                                </div>
+                                <div className="text-right">
+                                    <div className="flex items-center gap-1 justify-end">
+                                        <span className="text-xs font-black text-accent opacity-60">₱</span>
+                                        <span className="text-3xl font-black text-accent tracking-tighter">{viewingFood.Price}</span>
+                                    </div>
+                                    <span className={`text-[9px] font-black uppercase tracking-widest ${viewingFood.Stock <= 0 ? 'text-red-500' : 'text-primary/20'}`}>
+                                        {viewingFood.Stock <= 0 ? 'Sold Out' : `${viewingFood.Stock} Items Left`}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div className="py-4 border-y border-primary/5">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest opacity-20 mb-2">Description</h4>
+                                <p className="text-xs font-bold text-primary/60 leading-relaxed uppercase">
+                                    {viewingFood.Description || "No description available for this item."}
+                                </p>
+                            </div>
+                            
+                            <div className="pt-2">
+                                {getCartQuantity(viewingFood.ItemID) > 0 ? (
+                                    <div className="flex items-center justify-between bg-primary p-2 rounded-[25px] shadow-xl shadow-primary/20">
+                                        <button
+                                            onClick={() => updateQuantity(viewingFood, -1)}
+                                            className="w-12 h-12 rounded-[18px] bg-white/10 text-accent flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
+                                        >
+                                            <Minus size={20} strokeWidth={3} />
+                                        </button>
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-[9px] font-black text-accent/40 uppercase tracking-widest">In Cart</span>
+                                            <span className="text-xl font-black text-white">{getCartQuantity(viewingFood.ItemID)}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => updateQuantity(viewingFood, 1)}
+                                            className="w-12 h-12 rounded-[18px] bg-accent text-primary flex items-center justify-center shadow-lg shadow-accent/20 active:scale-95 transition-all"
+                                        >
+                                            <Plus size={20} strokeWidth={3} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button 
+                                        disabled={viewingFood.Stock <= 0}
+                                        onClick={() => updateQuantity(viewingFood, 1)}
+                                        className={`w-full py-5 rounded-[25px] flex items-center justify-center gap-3 shadow-xl transition-all ${viewingFood.Stock <= 0 ? 'bg-secondary border border-primary/5 text-primary/10 cursor-not-allowed shadow-none' : 'bg-primary text-accent shadow-primary/20 active:scale-[0.98]'}`}
+                                    >
+                                        <Plus size={18} />
+                                        <span className="text-xs font-black uppercase tracking-[0.2em]">{viewingFood.Stock <= 0 ? 'Currently Unavailable' : 'Add to Order'}</span>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

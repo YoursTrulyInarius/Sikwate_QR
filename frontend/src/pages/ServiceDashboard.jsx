@@ -29,9 +29,10 @@ const ServiceDashboard = () => {
 
     const fetchData = async () => {
         try {
-            const resS = await axios.get(`${API_BASE}/orders.php?status=Served`)
+            const timestamp = new Date().getTime()
+            const resS = await axios.get(`${API_BASE}/orders.php?status=Served&t=${timestamp}`)
             setOrders(resS.data)
-            const resH = await axios.get(`${API_BASE}/orders.php?status=Delivered`)
+            const resH = await axios.get(`${API_BASE}/orders.php?status=Delivered&t=${timestamp}`)
             setHistory(resH.data.slice(0, 10))
         } catch (err) { console.error(err) }
     }
@@ -51,7 +52,7 @@ const ServiceDashboard = () => {
         try {
             await axios.patch(`${API_BASE}/orders.php`, { orderId, status: 'Delivered' })
             Toast.fire({ icon: 'success', title: 'Delivered!' })
-            fetchData()
+            await fetchData()
         } catch (err) {
             Toast.fire({ icon: 'error', title: 'Update failed' })
         }

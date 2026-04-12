@@ -18,6 +18,8 @@ if ($method === 'GET') {
     $itemName = $_POST['itemName'] ?? null;
     $price = $_POST['price'] ?? null;
     $category = $_POST['category'] ?? null;
+    $stock = $_POST['stock'] ?? 0;
+    $description = $_POST['description'] ?? null;
     $itemImage = null;
 
     // Handle File Upload
@@ -53,13 +55,24 @@ if ($method === 'GET') {
         $itemName = $data['itemName'] ?? null;
         $price = $data['price'] ?? null;
         $category = $data['category'] ?? null;
+        $stock = $data['stock'] ?? 0;
+        $description = $data['description'] ?? null;
         $itemImage = $data['itemImage'] ?? null;
     }
 
-    if ($id) {
+    if (isset($_POST['restore'])) {
+        // RESTORE
+        if (!$id) {
+            echo json_encode(["error" => "No ID provided"]);
+            exit;
+        }
+        $stmt = $conn->prepare("UPDATE MENU SET DeletedAt = NULL WHERE ItemID = ?");
+        $stmt->execute([$id]);
+        echo json_encode(["message" => "Item restored successfully"]);
+    } elseif ($id) {
         // UPDATE
-        $sql = "UPDATE MENU SET ItemName = ?, Price = ?, Category = ?";
-        $params = [$itemName, $price, $category];
+        $sql = "UPDATE MENU SET ItemName = ?, Price = ?, Category = ?, Stock = ?, Description = ?";
+        $params = [$itemName, $price, $category, $stock, $description];
         if ($itemImage) {
             $sql .= ", ItemImage = ?";
             $params[] = $itemImage;
@@ -70,24 +83,14 @@ if ($method === 'GET') {
         $stmt = $conn->prepare($sql);
         $stmt->execute($params);
         echo json_encode(["message" => "Item updated successfully"]);
-    } elseif (isset($_POST['restore'])) {
-        // RESTORE
-        $id = $_POST['id'] ?? null;
-        if (!$id) {
-            echo json_encode(["error" => "No ID provided"]);
-            exit;
-        }
-        $stmt = $conn->prepare("UPDATE MENU SET DeletedAt = NULL WHERE ItemID = ?");
-        $stmt->execute([$id]);
-        echo json_encode(["message" => "Item restored successfully"]);
     } else {
         // CREATE
         if (empty($itemName) || empty($price) || empty($category)) {
             echo json_encode(["error" => "Incomplete data"]);
             exit;
         }
-        $stmt = $conn->prepare("INSERT INTO MENU (ItemName, Price, Category, ItemImage) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$itemName, $price, $category, $itemImage]);
+        $stmt = $conn->prepare("INSERT INTO MENU (ItemName, Price, Category, Stock, Description, ItemImage) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$itemName, $price, $category, $stock, $description, $itemImage]);
         echo json_encode(["message" => "Item added successfully", "id" => $conn->lastInsertId()]);
     }
 

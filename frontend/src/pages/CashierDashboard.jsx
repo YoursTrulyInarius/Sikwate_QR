@@ -29,11 +29,12 @@ const CashierDashboard = () => {
 
     const fetchData = async () => {
         try {
-            const resR = await axios.get(`${API_BASE}/billing.php`)
+            const timestamp = new Date().getTime()
+            const resR = await axios.get(`${API_BASE}/billing.php?t=${timestamp}`)
             const fetchedReceipts = Array.isArray(resR.data) ? resR.data : []
             setReceipts(fetchedReceipts)
 
-            const resO = await axios.get(`${API_BASE}/orders.php`)
+            const resO = await axios.get(`${API_BASE}/orders.php?t=${timestamp}`)
             const existingReceiptOrderIds = fetchedReceipts.map(r => r.OrderID)
             setPendingOrders((resO.data || []).filter(o => !existingReceiptOrderIds.includes(o.OrderID) && o.OrderStatus !== 'Paid'))
         } catch (err) { console.error(err) }
@@ -54,7 +55,7 @@ const CashierDashboard = () => {
         try {
             await axios.post(`${API_BASE}/billing.php`, { orderId })
             Toast.fire({ icon: 'success', title: 'Bill Gen!' })
-            fetchData()
+            await fetchData()
         } catch (err) { Toast.fire({ icon: 'error', title: 'Fail' }) }
     }
 
@@ -62,7 +63,7 @@ const CashierDashboard = () => {
         try {
             await axios.patch(`${API_BASE}/billing.php`, { receiptNumber })
             Toast.fire({ icon: 'success', title: 'Cleared!' })
-            fetchData()
+            await fetchData()
         } catch (err) { Toast.fire({ icon: 'error', title: 'Fail' }) }
     }
 

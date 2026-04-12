@@ -110,12 +110,12 @@ const Login = () => {
                             type="submit"
                             className="btn-primary w-full py-5 text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all"
                         >
-                            Authorize <LogIn size={18} />
+                            Login <LogIn size={18} />
                         </button>
                     </div>
                 </form>
                 <p className="text-center text-[9px] font-bold opacity-20 uppercase tracking-widest pt-10">
-                    Authorized Personnel Only
+                    Login Protected Access
                 </p>
             </div>
         </div>

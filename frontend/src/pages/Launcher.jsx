@@ -213,7 +213,7 @@ const Launcher = () => {
                         type="submit"
                         className="btn-primary w-full py-4 text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-primary/20 mt-2"
                     >
-                        Authorize <LogIn size={18} />
+                        Login <LogIn size={18} />
                     </button>
                 </form>
             </div>

@@ -30,7 +30,7 @@ const KitchenDashboard = () => {
     const [orders, setOrders] = useState([])
     const [menu, setMenu] = useState([])
     const [trashMenu, setTrashMenu] = useState([])
-    const [newItem, setNewItem] = useState({ itemName: '', price: '', category: 'Drinks' })
+    const [newItem, setNewItem] = useState({ itemName: '', price: '', category: 'Drinks', stock: 0, description: '' })
     const [editingItem, setEditingItem] = useState(null)
     const [selectedFile, setSelectedFile] = useState(null)
     const [previewUrl, setPreviewUrl] = useState(null)
@@ -70,11 +70,12 @@ const KitchenDashboard = () => {
 
     const fetchData = async () => {
         try {
-            const resO = await axios.get(`${API_BASE}/orders.php?status=Ordered`)
+            const timestamp = new Date().getTime()
+            const resO = await axios.get(`${API_BASE}/orders.php?status=Ordered&t=${timestamp}`)
             setOrders(resO.data || [])
-            const resM = await axios.get(`${API_BASE}/menu.php`)
+            const resM = await axios.get(`${API_BASE}/menu.php?t=${timestamp}`)
             setMenu(resM.data || [])
-            const resT = await axios.get(`${API_BASE}/menu.php?trash=true`)
+            const resT = await axios.get(`${API_BASE}/menu.php?trash=true&t=${timestamp}`)
             setTrashMenu(resT.data || [])
         } catch (err) { console.error(err) }
     }
@@ -111,6 +112,8 @@ const KitchenDashboard = () => {
         formData.append('itemName', editingItem ? editingItem.ItemName : newItem.itemName)
         formData.append('price', editingItem ? editingItem.Price : newItem.price)
         formData.append('category', editingItem ? editingItem.Category : newItem.category)
+        formData.append('stock', editingItem ? editingItem.Stock : newItem.stock)
+        formData.append('description', editingItem ? editingItem.Description : newItem.description)
         if (selectedFile) formData.append('image', selectedFile)
 
         try {
@@ -118,16 +121,19 @@ const KitchenDashboard = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             })
 
-            Toast.fire({
+            MySwal.fire({
+                ...swalConfig,
                 icon: 'success',
-                title: editingItem ? 'Updated!' : 'Added!'
+                title: editingItem ? 'Updated!' : 'Added!',
+                timer: 1500,
+                showConfirmButton: false
             })
 
-            setNewItem({ itemName: '', price: '', category: 'Drinks' })
+            setNewItem({ itemName: '', price: '', category: 'Drinks', stock: 0, description: '' })
             setEditingItem(null)
             setSelectedFile(null)
             setPreviewUrl(null)
-            fetchData()
+            await fetchData()
             setActiveTab('menu')
         } catch (err) {
             MySwal.fire({ ...swalConfig, icon: 'error', title: 'Failed', text: 'Error saving item' })
@@ -147,8 +153,14 @@ const KitchenDashboard = () => {
         if (result.isConfirmed) {
             try {
                 await axios.delete(`${API_BASE}/menu.php?id=${itemId}`)
-                Toast.fire({ icon: 'success', title: 'Moved to Trash' })
-                fetchData()
+                MySwal.fire({
+                    ...swalConfig,
+                    icon: 'success',
+                    title: 'Moved to Trash',
+                    timer: 1500,
+                    showConfirmButton: false
+                })
+                await fetchData()
             } catch (err) {
                 MySwal.fire({ ...swalConfig, icon: 'error', title: 'Failed', text: 'Could not delete' })
             }
@@ -162,8 +174,14 @@ const KitchenDashboard = () => {
 
         try {
             await axios.post(`${API_BASE}/menu.php`, formData)
-            Toast.fire({ icon: 'success', title: 'Restored!' })
-            fetchData()
+            MySwal.fire({
+                ...swalConfig,
+                icon: 'success',
+                title: 'Restored!',
+                timer: 1500,
+                showConfirmButton: false
+            })
+            await fetchData()
         } catch (err) {
             MySwal.fire({ ...swalConfig, icon: 'error', title: 'Failed', text: 'Could not restore' })
         }
@@ -182,8 +200,14 @@ const KitchenDashboard = () => {
         if (result.isConfirmed) {
             try {
                 await axios.delete(`${API_BASE}/menu.php?id=${itemId}&permanent=true`)
-                Toast.fire({ icon: 'success', title: 'Permanent Deleted' })
-                fetchData()
+                MySwal.fire({
+                    ...swalConfig,
+                    icon: 'success',
+                    title: 'Permanent Deleted',
+                    timer: 1500,
+                    showConfirmButton: false
+                })
+                await fetchData()
             } catch (err) {
                 MySwal.fire({ ...swalConfig, icon: 'error', title: 'Failed', text: 'Could not delete' })
             }
@@ -193,8 +217,14 @@ const KitchenDashboard = () => {
     const markServed = async (orderId) => {
         try {
             await axios.patch(`${API_BASE}/orders.php`, { orderId, status: 'Served' })
-            Toast.fire({ icon: 'success', title: 'Ready!' })
-            fetchData()
+            MySwal.fire({
+                ...swalConfig,
+                icon: 'success',
+                title: 'Ready!',
+                timer: 1500,
+                showConfirmButton: false
+            })
+            await fetchData()
         } catch (err) { Toast.fire({ icon: 'error', title: 'Update failed' }) }
     }
 
@@ -310,7 +340,11 @@ const KitchenDashboard = () => {
                                             </div>
                                             <div>
                                                 <p className="text-[11px] font-black text-primary leading-tight uppercase tracking-tighter">{mItem.ItemName}</p>
-                                                <p className="text-[9px] font-bold text-accent">₱{mItem.Price} <span className="opacity-20 ml-1"># {mItem.Category}</span></p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-[9px] font-bold text-accent">₱{mItem.Price}</p>
+                                                    <span className="text-[8px] bg-primary/10 px-1.5 py-0.5 rounded-md font-black text-primary/40 uppercase tracking-widest leading-none">Stock: {mItem.Stock}</span>
+                                                    <span className="opacity-20 text-[8px] font-bold uppercase tracking-widest"># {mItem.Category}</span>
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex gap-1">
@@ -359,6 +393,23 @@ const KitchenDashboard = () => {
                                             {categoriesList.map(c => <option key={c} value={c} />)}
                                         </datalist>
                                     </div>
+                                    <div className="space-y-1 col-span-2">
+                                        <label className="text-[9px] font-black uppercase opacity-30 ml-4 mb-2 block">Available Stock</label>
+                                        <input
+                                            type="number" placeholder="Enter stock quantity" className="card !p-5 !rounded-3xl text-sm font-bold w-full bg-secondary/20 outline-none focus:ring-1 ring-accent"
+                                            value={editingItem ? editingItem.Stock : newItem.stock}
+                                            onChange={e => editingItem ? setEditingItem({ ...editingItem, Stock: e.target.value }) : setNewItem({ ...newItem, stock: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[9px] font-black uppercase opacity-30 ml-4 mb-2 block">Food Description</label>
+                                    <textarea
+                                        placeholder="Enter ingredients or description..." className="card !p-5 !rounded-3xl text-[10px] font-bold w-full bg-secondary/20 outline-none focus:ring-1 ring-accent scrollbar-none min-h-[80px]"
+                                        value={editingItem ? editingItem.Description : newItem.description}
+                                        onChange={e => editingItem ? setEditingItem({ ...editingItem, Description: e.target.value }) : setNewItem({ ...newItem, description: e.target.value })}
+                                    />
                                 </div>
 
                                 <div className="space-y-1">

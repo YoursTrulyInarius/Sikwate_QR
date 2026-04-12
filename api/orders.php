@@ -28,6 +28,15 @@ if ($method === 'POST') {
                 $item['quantity'], 
                 $item['price']
             ]);
+
+            // Decrement Stock
+            $stmtStock = $conn->prepare("UPDATE MENU SET Stock = Stock - ? WHERE ItemName = ? AND Stock >= ?");
+            $stmtStock->execute([$item['quantity'], $item['name'], $item['quantity']]);
+            
+            if ($stmtStock->rowCount() === 0) {
+                // If stock update failed (maybe insufficient stock), throw exception
+                throw new Exception("Insufficient stock for " . $item['name']);
+            }
         }
 
         $conn->commit();
